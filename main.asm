@@ -1,5 +1,7 @@
 ; main.asm - punto de entrada y ciclo principal
 ; Ensamblar: mads main.asm -o:juego.xex
+; Version debug (selector de nivel en el titulo):
+;            mads main.asm -d:DEBUG=1 -o:juego-debug.xex
 ;
 ; Archivos del proyecto (todos en la misma carpeta):
 ;   hardware.asm  direcciones del Atari
@@ -14,6 +16,10 @@
 ;   datos.asm     variables y graficos del sprite
 ;   kaiju_*.asm   recursos de Kaiju (graficos, niveles, robots, titulo);
 ;                 kaiju_titulo.asm va al final: ocupa $6000-$7EAF
+
+        .ifndef DEBUG
+DEBUG   = 0             ; 1 = selector de nivel en el titulo (mads -d:DEBUG=1)
+        .endif
 
         icl "hardware.asm"
 

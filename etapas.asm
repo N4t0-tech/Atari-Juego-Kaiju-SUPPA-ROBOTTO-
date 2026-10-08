@@ -7,8 +7,9 @@
 ; PLAYER». La energia y los puntos pasan de una etapa a la siguiente.
 
 nueva_partida
-        lda #0
+        lda etapa_ini   ; 0 salvo que se elija otra con el selector DEBUG
         sta etapa
+        lda #0
         sta puntos
         sta puntos+1
         sta puntos+2
@@ -19,15 +20,72 @@ nueva_partida
 ; imagen de titulo hasta que se aprieta el boton (hay que soltarlo antes)
 titulo
         jsr modo_titulo
+        .if DEBUG
+        jsr dbg_texto
+        .endif
 tit_suelta
         jsr esperar_frame
+        .if DEBUG
+        jsr dbg_selector
+        .endif
         lda STRIG0
         beq tit_suelta
 tit_espera
         jsr esperar_frame
+        .if DEBUG
+        jsr dbg_selector
+        .endif
         lda STRIG0
         bne tit_espera
         rts
+
+        .if DEBUG
+; selector de nivel (solo DEBUG): izquierda/derecha -1/+1 etapa, arriba/abajo
+; -6/+6 (un mundo), dando la vuelta en 0-29; se mueve una vez por empujon
+dbg_selector
+        lda STICK0
+        and #$0F
+        cmp dbg_stick
+        beq dbg_fin     ; sin cambios
+        sta dbg_stick
+        ldx #1          ; X = cuanto sumar (en modulo 30)
+        cmp #$07        ; derecha
+        beq dbg_sumar
+        ldx #29         ; -1
+        cmp #$0B        ; izquierda
+        beq dbg_sumar
+        ldx #6
+        cmp #$0D        ; abajo
+        beq dbg_sumar
+        ldx #24         ; -6
+        cmp #$0E        ; arriba
+        bne dbg_fin
+dbg_sumar
+        txa
+        clc
+        adc etapa_ini
+        cmp #30
+        bcc dbg_ok
+        sbc #30
+dbg_ok  sta etapa_ini
+; escribe «m-n» de etapa_ini en txt_debug (m = etapa/6 + 1, n = etapa%6 + 1)
+dbg_texto
+        lda etapa_ini
+        ldx #0
+dbg_div cmp #6
+        bcc dbg_res
+        sbc #6
+        inx
+        jmp dbg_div
+dbg_res clc
+        adc #$11        ; d'1' = $11
+        sta txt_debug+TXT_DEBUG_M+2
+        txa
+        clc
+        adc #$11
+        sta txt_debug+TXT_DEBUG_M
+dbg_fin rts
+        .endif
 
 ; «LEVEL m-n» en el centro durante 2 segundos, con la fuente de Kaiju
 pantalla_level

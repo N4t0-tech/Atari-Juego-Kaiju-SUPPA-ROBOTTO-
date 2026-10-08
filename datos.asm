@@ -35,6 +35,13 @@ puntos  .byte 0,0,0     ; puntuacion BCD, 6 digitos (alto, medio, bajo)
 
 ; --- partida (etapas.asm) ---
 etapa   .byte 0         ; 0-29: mundo = etapa/6 + 1, mapa = etapa%6 + 1, robots = DAT(etapa)
+etapa_ini .byte 0       ; etapa con la que empieza la partida (selector DEBUG)
+dbg_stick .byte $0F     ; STICK0 anterior del selector (para moverse al apretar)
+        .if DEBUG
+; linea de texto del titulo en DEBUG (ANTIC 7, 20 caracteres, fuente de la ROM)
+txt_debug dta d'   START LEVEL 1-1  '
+TXT_DEBUG_M = 15        ; posicion del digito del mundo (n va 2 despues)
+        .endif
 energia .byte 5         ; iconos de energia; 0 = fin de la partida
 invul   .byte 0         ; frames de invulnerabilidad que quedan tras un golpe
 fin     .byte 0         ; 1 = se disparo a una celula: se repite la etapa

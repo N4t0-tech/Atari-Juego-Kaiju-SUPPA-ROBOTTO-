@@ -3,3 +3,5 @@
 *.lab
 *~
 *.swp
+# build de debug (mads -d:DEBUG=1)
+juego-debug.xex

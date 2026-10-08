@@ -5,6 +5,7 @@ Atari 8-bit game in 6502 assembly (MADS assembler): a recreation of the Kaiju / 
 ## Build & run
 
 - Build: `mads main.asm -o:juego.xex` (MADS 2.1.7)
+- Debug build: `mads main.asm -d:DEBUG=1 -o:juego-debug.xex` (not committed, in `.gitignore`). `DEBUG` (default 0 via `.ifndef` in `main.asm`) replaces the title's text line with `txt_debug` ("START LEVEL m-n"): joystick left/right ±1 stage, up/down ±6 (wrapping 0-29), sets `etapa_ini`, which `nueva_partida` copies into `etapa` (always 0 in the normal build). Code under `.if DEBUG` in `etapas.asm` (`dbg_selector`/`dbg_texto`), `nivel.asm` and `datos.asm`.
 - Run: open `juego.xex` in Altirra (`altirra juego.xex`); control with joystick 1 + trigger
 - No test suite — verification is: assemble clean + smoke-test in emulator
 - `juego.xex` is a committed build artifact: rebuild it after any `.asm` change

@@ -74,9 +74,15 @@ dlt_2   sta DLIST_T,x
         bne dlt_2
         lda #$47        ; ANTIC 7 + LMS: "MUVIRON  SOULBATTERY"
         sta DLIST_T,x
+        .if DEBUG       ; o el selector de nivel
+        lda #<txt_debug
+        sta DLIST_T+1,x
+        lda #>txt_debug
+        .else
         lda #<kaiju_txt_titulo
         sta DLIST_T+1,x
         lda #>kaiju_txt_titulo
+        .endif
         sta DLIST_T+2,x
         lda #$41
         sta DLIST_T+3,x
