@@ -5,3 +5,6 @@
 *.swp
 # build de debug (mads -d:DEBUG=1)
 juego-debug.xex
+
+# binario del juego (se genera con mads)
+juego.xex

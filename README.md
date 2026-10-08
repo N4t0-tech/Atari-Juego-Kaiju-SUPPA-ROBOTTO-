@@ -19,7 +19,7 @@ mads main.asm -o:juego.xex
 altirra juego.xex
 ```
 
-`juego.xex` está versionado en el repo: si cambiás algún `.asm`, recompilalo.
+`juego.xex` no está en el repo (se genera al compilar).
 
 ### Build de debug
 
