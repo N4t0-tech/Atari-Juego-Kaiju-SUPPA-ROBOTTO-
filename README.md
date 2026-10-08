@@ -30,6 +30,23 @@ mads main.asm -d:DEBUG=1 -o:juego-debug.xex
 En la pantalla de título aparece **START LEVEL m-n** para empezar en cualquier etapa:
 joystick izquierda/derecha cambia de a una etapa, arriba/abajo de a un mundo (6 etapas).
 
+### Windows
+
+MADS y Altirra tienen versiones nativas para Windows, así que los comandos son los mismos:
+
+1. Bajá `mads.exe` de los [releases de Mad-Assembler](https://github.com/tebe6502/Mad-Assembler/releases)
+   y ponelo en el `PATH` o en la carpeta del proyecto.
+2. Desde `cmd` o PowerShell, **parado en la carpeta del proyecto** (los `icl` usan rutas relativas):
+
+   ```bat
+   mads main.asm -o:juego.xex
+   ```
+
+3. Abrí `juego.xex` con Altirra (doble clic, arrastrándolo a la ventana o `Altirra64.exe juego.xex`).
+
+Si clonás con git, evitá que convierta los finales de línea del binario `kaiju_titulo.mic`
+(`git config core.autocrlf false`); a los `.asm` con CRLF MADS los acepta igual.
+
 ## Controles
 
 | Control              | Acción                                   |
