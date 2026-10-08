@@ -1,0 +1,5 @@
+# listados/etiquetas de MADS y basura de editores
+*.lst
+*.lab
+*~
+*.swp
