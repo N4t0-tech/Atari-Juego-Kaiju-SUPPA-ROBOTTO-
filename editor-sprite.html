@@ -703,7 +703,7 @@ function pasoJuego() {
   if (d.aba) { mvy = 2; J.ddy = 4; }
   if (d.izq) { mvx = -1; J.ddx = -4; }
   if (d.der) { mvx = 1; J.ddx = 4; }
-  if (!(mvx && mvy && (J.rt & 3) === 0)) {        // diagonal: frena 1 de cada 4 frames
+  if (!(mvx && mvy && (J.rt & 3) === 0)) {        // diagonal: frena 1 de cada 4 pasos (npaso)
     J.px = Math.min(200, Math.max(50, J.px + mvx)); if (chocaJ()) J.px = ox;
     J.py = Math.min(198, Math.max(40, J.py + mvy)); if (chocaJ()) J.py = oy;
     J.andando = (J.px !== ox || J.py !== oy) ? 1 : 0;
@@ -721,8 +721,11 @@ function pasoJuego() {
     J.bx = (J.bx + J.bdx) & 0xFF; J.by = (J.by + J.bdy) & 0xFF;
     if (J.bx < 48 || J.bx >= 206 || J.by < 40 || J.by >= 216) J.activa = 0;
     else {
-      const k = casilla(J.by + 4, J.bx + 2);
-      if (mapa[k]) {                                 // contra un bloque: muere; el 5 se rompe
+      // las 4 esquinas de la bala (4 x 8, bala_px/bala_py): rompe todos los
+      // azules que toque (+1 cada uno); cualquier bloque la destruye
+      for (const [dx, dy] of [[3, 7], [0, 7], [3, 0], [0, 0]]) {
+        const k = casilla(J.by + dy, J.bx + dx);
+        if (!mapa[k]) continue;
         if (mapa[k] === 5) { mapa[k] = 0; J.puntos = (J.puntos + 1) % 1000000; mapaCambio = true; }
         J.activa = 0;
       }
@@ -795,10 +798,11 @@ function dibujarEscena() {
     if (col) P(J.px + x, J.py + y, 1, col);
   }
 }
+const FRAMES_PASO = 2;   // como datos.asm: un paso del juego cada 2 frames (30/s)
 let ultimo = performance.now(), acum = 0, animT = 0;
 function bucle(t) {
   acum += Math.min(250, t - ultimo); ultimo = t;
-  while (acum >= 1000 / 60) { acum -= 1000 / 60; pasoJuego(); animT++; }
+  while (acum >= 1000 / 60 * FRAMES_PASO) { acum -= 1000 / 60 * FRAMES_PASO; pasoJuego(); animT++; }
   dibujarEscena();
   const paso = TABLA[Math.floor(animT / 6) & 3];
   ['anim_d', 'anim_i'].forEach((id, k) => {
