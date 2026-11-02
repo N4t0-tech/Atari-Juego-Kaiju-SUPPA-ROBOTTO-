@@ -42,6 +42,7 @@ loop
         jsr dibujar_jugador
         jsr actualizar_bala
         jsr actualizar_enemigos
+        jsr animar_robots
         jsr dibujar_celulas
         jsr contactos
         jsr actualizar_sonido
@@ -88,6 +89,8 @@ ep_fr   jsr esperar_frame
 
 ; espera al siguiente frame (sincroniza el juego a 50/60 cuadros por segundo)
 esperar_frame
+        lda #0          ; el joystick no apaga el modo atraccion: sin esto, tras
+        sta ATRACT      ; ~9 min sin tocar el teclado los colores van cambiando
         lda RTCLOK
 wait    cmp RTCLOK
         beq wait

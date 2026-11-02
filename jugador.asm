@@ -206,8 +206,13 @@ dj      lda (ptr),y     ; fila de P0
         inx
         cpy #24
         bne dj
-        lda px
-        sta HPOSP0
+        lda invul       ; invulnerable: parpadea (oculto 4 pasos de cada 8)
+        and #4
+        beq dj_pos
+        lda #0          ; HPOS 0: fuera de la pantalla
+        beq dj_hpos
+dj_pos  lda px
+dj_hpos sta HPOSP0
         sta HPOSP1
         rts
 

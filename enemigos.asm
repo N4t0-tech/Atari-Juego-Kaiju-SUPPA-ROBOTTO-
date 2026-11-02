@@ -75,6 +75,8 @@ cr_rob  cpx nrob
         lda #0
         sta rob_paso,x
         sta rob_fase,x
+        sta rob_expl,x
+        sta rob_golpe,x
         lda #1
         sta rob_estado,x
         lda tmp3
@@ -162,7 +164,8 @@ libre2x2
         ora (ptr2),y
         rts
 
-; dibuja el robot X segun su direccion y su fase
+; dibuja el robot X segun su direccion y su fase; si esta herido, parpadea
+; cambiando el bit de inverso
 dibujar_robot
         jsr dir_robot
         lda rob_dir,x
@@ -175,7 +178,17 @@ dr_fase ldy rob_fase,x
         beq dr_pon
         clc
         adc #4
-dr_pon  jmp poner2x2
+dr_pon  ldy rob_golpe,x
+        beq dr_nor
+        pha
+        tya
+        and #2
+        beq dr_nor2
+        pla
+        eor #$80
+        jmp poner2x2
+dr_nor2 pla
+dr_nor  jmp poner2x2
 
 ; casilla del centro del jugador en pcx, pcy
 centro_jugador
@@ -338,7 +351,8 @@ tc_no   clc
         rts
 
 ; la bala toco la casilla bcol/bfil de un enemigo: le quita vida y, si llega
-; a 0, lo borra y suma 10 puntos
+; a 0, lo cambia por la explosion (animar_robots la borra) y suma 10
+; puntos; si no, parpadea un rato (animar_robots)
 golpear_enemigo
         ldx #0
 ge_rob  cpx nrob
@@ -357,19 +371,56 @@ ge_rob  cpx nrob
         cmp #2
         bcs ge_sig
         dec rob_vida,x
-        bne ge_fin
+        bne ge_herido
         lda #9          ; destruido
         sta rob_dir,x
+        lda #EXPLO_PASOS
+        sta rob_expl,x
         jsr dir_robot
-        jsr borrar2x2
+        lda #EXPLO+$80  ; fase 0, en inverso
+        jsr poner2x2
         ldx #2
         lda #$10
         jsr sumar_bcd
-        lda #SND_GOLPE
+        lda #SND_EXPLOSION
+        jmp sonar
+ge_herido
+        lda #GOLPE_PASOS
+        sta rob_golpe,x
+        lda #SND_IMPACTO
         jmp sonar
 ge_sig  inx
         jmp ge_rob
 ge_fin  rts
+
+; cada paso: el parpadeo de los robots heridos y las explosiones de los
+; destruidos (fase 1 a la mitad, y al final se borran)
+animar_robots
+        ldx #0
+ax_rob  cpx nrob
+        bcs ax_fin
+        lda rob_golpe,x
+        beq ax_expl
+        dec rob_golpe,x ; al llegar a 0 queda dibujado normal
+        lda rob_dir,x
+        cmp #9
+        beq ax_expl
+        jsr dibujar_robot
+ax_expl lda rob_expl,x
+        beq ax_sig
+        dec rob_expl,x
+        jsr dir_robot
+        lda rob_expl,x
+        bne ax_fase
+        jsr borrar2x2
+        jmp ax_sig
+ax_fase cmp #EXPLO_PASOS/2
+        bne ax_sig
+        lda #EXPLO+$84  ; fase 1, en inverso
+        jsr poner2x2
+ax_sig  inx
+        jmp ax_rob
+ax_fin  rts
 
 ; cada frame: celulas que toca el jugador (se recogen) y enemigos que lo
 ; tocan (le quitan energia, con 50 frames de invulnerabilidad)

@@ -80,6 +80,8 @@ rob_paso :MAXROB .byte 0        ; paso de la patrulla
 rob_estado :MAXROB .byte 0      ; 1 = patrulla, 2 = persigue al jugador
 rob_vida :MAXROB .byte 0        ; disparos que aguanta
 rob_fase :MAXROB .byte 0        ; animacion; avanza cuando vuelve a 0
+rob_golpe :MAXROB .byte 0       ; herido: pasos que le quedan de parpadeo
+rob_expl :MAXROB .byte 0        ; destruido: pasos que le quedan a la explosion
 
 ; --- celulas de la etapa (celulas.asm), hasta MAXCEL ---
 MAXCEL  = 18
@@ -100,9 +102,11 @@ persigue .byte 0,1,7, 2,8,6, 3,5,4
 SND_DISPARO = 0
 SND_RECOGER = 1
 SND_GOLPE   = 2
-snd_base .byte 20,60,40
-snd_paso .byte 6,$FC,12
-snd_dist .byte $A0,$A0,$80      ; $A = tono puro, $8 = ruido
+SND_EXPLOSION = 3       ; ruido que va bajando
+SND_IMPACTO = 4         ; robot herido: zumbido que va subiendo
+snd_base .byte 20,60,40,30,50
+snd_paso .byte 6,$FC,12,24,$F8
+snd_dist .byte $A0,$A0,$80,$80,$C0      ; $A = tono puro, $8 = ruido
 
 txt_level .byte $28,$29,$2A,$29,$28     ; "LEVEL" con la fuente de Kaiju
 hud_dirty .byte 1       ; 1 = hay que redibujar el HUD
@@ -127,6 +131,21 @@ bala_icono .byte %0000
 ; (4 puntos en las esquinas); pintachispa separa M1/M0 a cada lado de bx
 chispa_icono .byte %1100,%0011,%0011,%1100
         .byte %1111,%0000,%0000,%1111
+
+; explosion de un robot destruido (enemigos.asm): 2 x 2 caracteres en
+; EXPLO..EXPLO+3 (fase 0) y +4..+7 (fase 1), dibujados en inverso (pixel 11 =
+; COLOR3). EXPLO_PASOS pasos en total; a la mitad cambia a la fase 1
+EXPLO   = $48           ; $48-$4F: libres en la fuente; choca los deja pasar
+EXPLO_PASOS = 12
+GOLPE_PASOS = 8         ; parpadeo de un robot herido (cambia el bit de inverso)
+fuente_explosion        .byte $00,$00,$02,$00,$0B,$2F,$0F,$2F   ; $48 fase 0
+                        .byte $00,$00,$00,$88,$E0,$F8,$F0,$F8   ; $49 fase 0
+                        .byte $2F,$0F,$2F,$0B,$20,$00,$00,$00   ; $4A fase 0
+                        .byte $F8,$F0,$F8,$E0,$80,$88,$00,$00   ; $4B fase 0
+                        .byte $80,$20,$08,$42,$23,$0C,$8C,$31   ; $4C fase 1
+                        .byte $02,$42,$18,$20,$04,$C8,$30,$0E   ; $4D fase 1
+                        .byte $B0,$0C,$23,$08,$12,$08,$21,$80   ; $4E fase 1
+                        .byte $4C,$30,$31,$20,$08,$21,$02,$00   ; $4F fase 1
 
 ; poses del jugador (kaiju_graficos.asm). Cada pose es P0 (24 bytes) seguido
 ; de P1 (24 bytes); dibujar_jugador cuenta con eso. Las B van tras las A.

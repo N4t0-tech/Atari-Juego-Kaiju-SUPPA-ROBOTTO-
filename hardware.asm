@@ -17,6 +17,7 @@ COLOR4  = $02C8         ; fondo de modos graficos y borde
 CRSINH  = $02F0         ; 1 = ocultar cursor
 CHBAS   = $02F4         ; shadow de CHBASE (pagina de la fuente)
 RTCLOK  = $14           ; contador de frames (byte bajo)
+ATRACT  = $4D           ; modo atraccion del OS: con bit 7 cambia los colores
 SAVMSC  = $58           ; puntero a la memoria de pantalla (GR.0 del OS; ya no se usa)
 SDLSTL  = $0230         ; shadow de la lista de pantalla (byte bajo)
 SDLSTH  = $0231         ; (byte alto)

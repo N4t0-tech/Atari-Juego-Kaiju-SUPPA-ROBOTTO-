@@ -27,7 +27,7 @@ bal_mueve
         lda bx          ; si sale de la zona visible, se destruye
         cmp #48
         bcc matar
-        cmp #206
+        cmp #205         ; bx+3 (esquina derecha) <= col 39
         bcs matar
         lda by
         cmp #40           ; fila 0 reservada para el HUD

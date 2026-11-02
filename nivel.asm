@@ -30,6 +30,11 @@ fnt_k2  lda kaiju_fuente+$100,x  ; los 200 restantes (57 x 8 = 456)
         inx
         cpx #200
         bne fnt_k2
+        ldx #63         ; y los 8 de la explosion: $48-$4F
+fnt_ex  lda fuente_explosion,x
+        sta FUENTE+EXPLO*8,x
+        dex
+        bpl fnt_ex
 
         ; lista de pantalla del juego
         ldx #dl_fin-dl_datos-1
@@ -274,6 +279,10 @@ ch_col  lda (ptr2),y
         bcc ch_si       ; 1-$13: bloque
         cmp #$34
         bcc ch_sig      ; $14-$33: celula o enemigo
+        cmp #EXPLO
+        bcc ch_si
+        cmp #EXPLO+8
+        bcc ch_sig      ; explosion de un robot
 ch_si   lda (ptr2),y
         sec
         rts
