@@ -155,6 +155,7 @@ modo_titulo
 limpiar_pmg
         lda #0
         sta activa
+        sta chispa
         tax
 lpm     sta PMG,x
         sta PMG+$100,x

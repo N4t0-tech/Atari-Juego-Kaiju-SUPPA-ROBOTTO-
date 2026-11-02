@@ -8,7 +8,13 @@ actualizar_bala
         sta gatillo
         lda activa
         bne bal_mueve
-        jmp nuevabala
+        jsr nuevabala   ; disparar cancela las chispas (chispa = 0)
+        lda chispa
+        beq finchi
+        dec chispa
+        beq finchi
+        jmp pintachispa
+finchi  rts
 bal_mueve
         lda bx          ; avanzar la bala
         clc
@@ -58,21 +64,55 @@ bal_sig ldx bpunto
         dex
         bpl bal_pt
         lda brompe
-        bne matar
+        bne chocar
         jmp pintabala
 bal_cel and #$7F
         cmp #$14
-        bcc matar         ; borde o ladrillo
+        bcc chocar        ; borde o ladrillo
         cmp #$1C
         bcs bal_rob
         lda #1            ; celula: fin de la etapa (se repite)
         sta fin
         jmp matar
 bal_rob cmp #$34
-        bcs matar
+        bcs chocar        ; bloque solido ($34+)
         jsr golpear_enemigo
 matar   lda #0
         sta activa
+        rts
+chocar  lda #0            ; contra un muro: chispas en bx/by
+        sta activa
+        lda #CHISPA_PASOS
+        sta chispa
+; chispas (missiles 0+1, 8 lineas desde by): cerca y luego lejos de bx
+pintachispa
+        ldx #0            ; cerca: filas 0-3 de chispa_icono, separacion 1
+        ldy #1
+        lda chispa
+        cmp #CHISPA_PASOS/2+1
+        bcs chi_c
+        ldx #4            ; lejos: filas 4-7, separacion 4
+        ldy #4
+chi_c   tya
+        eor #$FF          ; HPOSM1 = bx - sep
+        sec
+        adc bx
+        sta HPOSM1
+        tya
+        clc
+        adc bx
+        adc #2            ; HPOSM0 = bx + 2 + sep
+        sta HPOSM0
+        ldy by
+chi_pb  lda chispa_icono,x
+        sta PMG+$300,y
+        sta PMG+$301,y
+        iny
+        iny
+        inx
+        txa
+        and #3
+        bne chi_pb
         rts
 nuevabala
         lda gatillo
@@ -110,6 +150,8 @@ dpy     stx bdy
 recta
         lda #1
         sta activa
+        lda #0
+        sta chispa
         lda #SND_DISPARO
         jsr sonar
 pintabala
@@ -130,9 +172,10 @@ bal_pb  lda bala_icono,x
         sta HPOSM0      ; M0 = columna derecha (2 px despues): bala de 4 px
 finbala rts
 
-; borra la bala (8 lineas de los missiles 0+1) si esta activa
+; borra la bala o las chispas (8 lineas de los missiles 0+1)
 borrabala
         lda activa
+        ora chispa
         beq nobala
         ldy by
         lda #0

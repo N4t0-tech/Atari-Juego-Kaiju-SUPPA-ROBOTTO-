@@ -15,6 +15,8 @@ ddx     .byte 4         ; hacia donde mira: -4, 0 o 4 (empieza mirando a la dere
 ddy     .byte 0
 sndtim  .byte 0         ; frames que le quedan al sonido de disparo
 activa  .byte 0         ; 1 = hay una bala en vuelo
+chispa  .byte 0         ; pasos que quedan de chispas (bala contra un muro)
+CHISPA_PASOS = 6        ; 6 pasos = 12 frames
 bx      .byte 0         ; posicion de la bala
 by      .byte 0
 bdx     .byte 0         ; velocidad de la bala
@@ -121,6 +123,10 @@ bala_icono .byte %0000
         .byte %1111
         .byte %1111
         .byte %0000
+; chispas al chocar con un muro (mismo formato): cerca (zigzag) y lejos
+; (4 puntos en las esquinas); pintachispa separa M1/M0 a cada lado de bx
+chispa_icono .byte %1100,%0011,%0011,%1100
+        .byte %1111,%0000,%0000,%1111
 
 ; poses del jugador (kaiju_graficos.asm). Cada pose es P0 (24 bytes) seguido
 ; de P1 (24 bytes); dibujar_jugador cuenta con eso. Las B van tras las A.
