@@ -13,7 +13,7 @@ nueva_partida
         sta puntos
         sta puntos+1
         sta puntos+2
-        lda #5
+        lda #MAXENERGIA
         sta energia
         rts
 

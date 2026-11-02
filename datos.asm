@@ -45,6 +45,8 @@ txt_debug dta d'   START LEVEL 1-1  '
 TXT_DEBUG_M = 15        ; posicion del digito del mundo (n va 2 despues)
         .endif
 energia .byte 5         ; iconos de energia; 0 = fin de la partida
+MAXENERGIA = 5          ; lo que cabe en el HUD (columnas 0-9)
+miles   .byte 0         ; sumar_bcd: digito de los miles antes de sumar
 invul   .byte 0         ; frames de invulnerabilidad que quedan tras un golpe
 fin     .byte 0         ; 1 = se disparo a una celula: se repite la etapa
 cuenta  .byte 0         ; 0-11: animacion de las celulas (cambian a los 0 y 6)

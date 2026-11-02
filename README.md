@@ -63,6 +63,7 @@ Si clonás con git, evitá que convierta los finales de línea del binario `kaij
   Cada disparo les quita una vida (1, 2 o 3 según el mundo); destruirlos da +10.
 - **Bloques azules**: se rompen a tiros (+1). El borde verde también lastima.
 - **Energía**: empezás con 5; después de cada golpe hay un rato de invulnerabilidad. Con 0 es GAME OVER.
+  Cada 5000 puntos ganás 1 de energía (hasta 5).
 - Superando las 30 etapas aparece "YOU ARE SUPER PLAYER".
 
 ## Estructura

@@ -1,9 +1,11 @@
 ; hud.asm - HUD superior al estilo de Kaiju (fila 0, ANTIC 4, fuente de Kaiju)
 ;
-;   columnas 0-9    energia: un icono ($06,$07) por punto (hasta 5)
-;   columnas 10-27  una barra ($34) por celula que falta recoger
-;   columnas 29-38  puntos: 10 digitos ($0A + digito); los 4 primeros son 0
+;   columnas 0-9    energia: un icono ($06,$07) por punto (hasta MAXENERGIA)
+;   centro          una barra ($34) por celula que falta recoger, centradas
+;                   en la pantalla (18 celulas = columnas 11-28)
+;   columnas 30-39  puntos: 10 digitos ($0A + digito); los 4 primeros son 0
 ;                   y los 6 ultimos salen de puntos (BCD)
+; Cada 5000 puntos, +1 de energia (sumar_bcd).
 
 dibujar_hud
         lda #0
@@ -24,8 +26,12 @@ hud_en  cpx #0
         iny
         dex
         jmp hud_en
-hud_ba  ldx celrest     ; barra de celulas
-        ldy #10
+hud_ba  lda #40         ; barra de celulas, desde la columna (40 - n) / 2
+        sec
+        sbc celrest
+        lsr
+        tay
+        ldx celrest
 hud_ba2 cpx #0
         beq hud_pt
         lda #$34
@@ -33,11 +39,11 @@ hud_ba2 cpx #0
         iny
         dex
         jmp hud_ba2
-hud_pt  ldy #29         ; puntos
+hud_pt  ldy #30         ; puntos
         lda #$0A
 hud_p0  sta PANTALLA,y
         iny
-        cpy #33
+        cpy #34
         bne hud_p0
         ldx #0
 hud_dig lda puntos,x
@@ -64,8 +70,15 @@ hud_dig lda puntos,x
 ; nulo), con acarreo decimal hacia los digitos de mas peso, y pide redibujar
 ; el HUD. +1: X=2 A=$01; +10: X=2 A=$10; +100: X=1 A=$01. Sin modo decimal
 ; (SED), para no depender de las interrupciones del OS. Conserva Y.
-; 999999 + 1 vuelve a 000000.
+; 999999 + 1 vuelve a 000000. Al cruzar un multiplo de 5000 da +1 de energia
+; (hasta MAXENERGIA): como se suma de a 100 como mucho, basta ver si el digito
+; de los miles cambio y quedo en 5 o en 0.
 sumar_bcd
+        pha
+        lda puntos+1
+        and #$F0
+        sta miles
+        pla
 sp_byte clc
         adc puntos,x
         sta puntos,x
@@ -85,7 +98,20 @@ sp_alto lda puntos,x
         bpl sp_byte
 sp_fin  lda #1
         sta hud_dirty
-        rts
+        lda puntos+1
+        and #$F0
+        cmp miles
+        beq sp_ret
+        cmp #$50
+        beq sp_vida
+        cmp #$00
+        bne sp_ret
+sp_vida lda energia     ; con 0 la partida ya termino
+        beq sp_ret
+        cmp #MAXENERGIA
+        bcs sp_ret
+        inc energia
+sp_ret  rts
 
 ; solo redibuja si algo cambio (puntos, energia o celulas ponen hud_dirty=1)
 actualizar_hud
