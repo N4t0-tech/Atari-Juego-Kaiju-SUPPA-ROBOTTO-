@@ -6,7 +6,7 @@
 <title>Editor de titulo MIC</title>
 <style>
   :root { --fondo:#111216; --panel:#1b1d23; --panel2:#23262e; --borde:#30333c; --texto:#e8e8ec; --suave:#8f92a1;
-          --acento:#4fc3d9; --acento-osc:#1d4650; --radio:12px; }
+          --acento:#4fc3d9; --acento-osc:#1d4650; --radio:12px; color-scheme:dark; }
   * { box-sizing:border-box; }
   body { background:var(--fondo); color:var(--texto); font:14px/1.5 system-ui, sans-serif; margin:0; }
   code { color:#b9e3ec; font-size:12.5px; }
@@ -71,8 +71,15 @@
   .slot button { padding:3px 9px; font-size:12px; margin-left:auto; }
   .muestra { width:30px; height:30px; border-radius:7px; border:1px solid #fff2; flex:none; }
 
-  textarea { width:100%; height:88px; background:#0c0d10; color:#b9e3ec; border:1px solid var(--borde);
-             border-radius:8px; font:12px/1.5 monospace; padding:8px 10px; resize:vertical; margin:8px 0 0; }
+  .campo { display:flex; align-items:center; gap:8px; }
+  .campo input { flex:1; min-width:0; background:#0c0d10; color:var(--texto); border:1px solid var(--borde); border-radius:8px;
+                 padding:7px 10px; font:14px monospace; text-transform:uppercase; }
+  .campo input:focus { outline:none; border-color:var(--acento); }
+  #cuenta { font:12px monospace; color:var(--suave); }
+  #cuenta.mal, #aviso-texto { color:#e0605a; }
+  #aviso-texto:empty { display:none; }
+  textarea { width:100%; height:104px; background:#0c0d10; color:#b9e3ec; border:1px solid var(--borde);
+             border-radius:8px; font:12px/1.5 monospace; padding:8px 10px; resize:vertical; margin:8px 0 0; white-space:pre; overflow-wrap:normal; overflow-x:auto; scrollbar-color:#3a3d46 #0c0d10; }
 
   /* selector de paleta */
   #paleta { display:none; position:fixed; inset:0; background:#000b; align-items:center; justify-content:center; z-index:10; }
@@ -127,7 +134,17 @@
     </section>
 
     <section class="tarjeta">
-      <h2><span class="paso">4</span>Al juego</h2>
+      <h2><span class="paso">4</span>Texto de abajo</h2>
+      <p class="suave" style="margin-bottom:8px">Lo que va entre <code>[ ]</code> sale con COLOR2, el resto con COLOR0. Se centra en 20 caracteres.</p>
+      <div class="campo"><input type="text" id="ftexto" value="MUVIRON  [SOULBATTERY]" spellcheck="false" autocomplete="off"><span id="cuenta"></span></div>
+      <p class="suave" id="aviso-texto"></p>
+      <p class="suave" style="margin-top:8px">Pega esto en <code>kaiju_graficos.asm</code> en lugar de la linea <code>kaiju_txt_titulo</code>:</p>
+      <textarea id="asm-texto" readonly style="height:60px"></textarea>
+      <div class="botones" style="margin-top:8px"><button id="bcopiar-texto">Copiar texto</button></div>
+    </section>
+
+    <section class="tarjeta">
+      <h2><span class="paso">5</span>Al juego</h2>
       <p class="suave">Guarda el .mic como <code>kaiju_titulo.mic</code>, pega esto en <code>kaiju_titulo.asm</code> y recompila.</p>
       <textarea id="asm" readonly></textarea>
       <div class="botones" style="margin-top:8px"><button id="bcopiar">Copiar colores</button></div>
@@ -179,8 +196,7 @@ function pintar() {
     img.data.set([c[0], c[1], c[2], 255], i * 4);
   }
   ctx.putImageData(img, 0, 0);
-  const t = document.getElementById('texto');
-  t.innerHTML = `<span style="color:${css(col[1])}">MUVIRON  </span><span style="color:${css(col[3])}">SOULBATTERY</span>`;
+  pintarTexto();
   document.getElementById('asm').value =
     ['pixel 01', 'pixel 10', 'pixel 11'].map((n, i) => `KAIJU_TITULO_COLOR${i}     = ${hex(col[i + 1])}   ; ${n}`).join('\n') +
     `\nKAIJU_TITULO_COLOR4     = $00   ; pixel 00 (fondo)`;
@@ -322,6 +338,47 @@ document.getElementById('bmic').addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([b])); a.download = 'kaiju_titulo.mic'; a.click();
 });
+// ---------- texto de abajo: ANTIC 7, 20 caracteres leidos directo de kaiju_txt_titulo (el $FF no lo usa) ----------
+const ANCHO_TEXTO = 20;
+// devuelve los tramos [{s, inv}] ya centrados en 20, o null si no cabe; inv = entre [ ] = d'...'* = COLOR2
+function tramosTexto(crudo) {
+  const car = []; let inv = false, malos = '';
+  for (const c of crudo.toUpperCase()) {
+    if (c === '[') inv = true;
+    else if (c === ']') inv = false;
+    else if (c >= ' ' && c <= '_' && c !== "'") car.push([c, inv]);   // $20-$5F: lo que da d'' en mayusculas
+    else if (!malos.includes(c)) malos += c;
+  }
+  const izq = Math.floor((ANCHO_TEXTO - car.length) / 2);
+  const todo = car.length > ANCHO_TEXTO ? null :
+    [...Array(izq).fill([' ', false]), ...car, ...Array(ANCHO_TEXTO - car.length - izq).fill([' ', false])];
+  const tramos = [];
+  for (const [c, i] of todo || []) {
+    const u = tramos[tramos.length - 1];
+    if (u && u.inv === i) u.s += c; else tramos.push({ s: c, inv: i });
+  }
+  return { tramos: todo && tramos, largo: car.length, malos };
+}
+const lineaTexto = tramos => 'kaiju_txt_titulo        dta ' +
+  tramos.map(t => `d'${t.s}'${t.inv ? '*' : ''}`).join(',') + ',$FF   ; 20 caracteres, modo 7';
+function pintarTexto() {
+  const r = tramosTexto(document.getElementById('ftexto').value);
+  const cuenta = document.getElementById('cuenta');
+  cuenta.textContent = `${r.largo}/${ANCHO_TEXTO}`;
+  cuenta.className = r.tramos ? '' : 'mal';
+  document.getElementById('aviso-texto').textContent =
+    (r.tramos ? '' : `Sobran ${r.largo - ANCHO_TEXTO} caracteres. `) + (r.malos ? `Se ignoran: ${r.malos}` : '');
+  const t = document.getElementById('texto'); t.textContent = '';
+  (r.tramos || []).forEach(p => {
+    const sp = document.createElement('span');
+    sp.textContent = p.s; sp.style.color = css(col[p.inv ? 3 : 1]);
+    t.appendChild(sp);
+  });
+  document.getElementById('asm-texto').value = r.tramos ? lineaTexto(r.tramos) : '';
+  document.getElementById('bcopiar-texto').disabled = !r.tramos;
+}
+document.getElementById('ftexto').addEventListener('input', pintarTexto);
+document.getElementById('bcopiar-texto').addEventListener('click', () => navigator.clipboard.writeText(document.getElementById('asm-texto').value));
 document.getElementById('bcopiar').addEventListener('click', () => navigator.clipboard.writeText(document.getElementById('asm').value));
 
 refrescar();

@@ -54,7 +54,7 @@ Atari 8-bit game in 6502 assembly (MADS assembler): a recreation of the Kaiju / 
 
 ## Title editor (`editor-mic.html`)
 
-- Opens in any browser, no build: converts a PNG/JPG to the title picture (160×196 ANTIC E, 4 colors, background fixed black; auto colors by k-means snapped to the Atari palette, optional Floyd-Steinberg dithering) or edits a `.mic`; pencil + undo. Downloads `kaiju_titulo.mic` (240 lines + 4 color bytes COLOR4,0,1,2) and gives the `KAIJU_TITULO_COLOR*` lines for `kaiju_titulo.asm` (the game uses those, not the file's color bytes). Its text-line preview uses COLOR0/COLOR2 like the real ANTIC 7 line.
+- Opens in any browser, no build: converts a PNG/JPG to the title picture (160×196 ANTIC E, 4 colors, background fixed black; auto colors by k-means snapped to the Atari palette, optional Floyd-Steinberg dithering) or edits a `.mic`; pencil + undo. Downloads `kaiju_titulo.mic` (240 lines + 4 color bytes COLOR4,0,1,2) and gives the `KAIJU_TITULO_COLOR*` lines for `kaiju_titulo.asm` (the game uses those, not the file's color bytes). It also edits that text line (`kaiju_txt_titulo` in `kaiju_graficos.asm`): `[ ]` marks COLOR2 (`d'...'*`), the rest is COLOR0; it pads/centers to exactly 20 chars because the title DL reads 20 bytes straight from the label (the `$FF` is ignored there), and only allows $20-$5F without `'`. Preview uses COLOR0/COLOR2 like the real ANTIC 7 line.
 
 ## Kaiju resources (`kaiju_*.asm`)
 
