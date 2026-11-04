@@ -92,6 +92,8 @@ celrest .byte 0         ; celulas que faltan recoger
 cel_x   :MAXCEL .byte 0
 cel_y   :MAXCEL .byte 0
 cel_viva :MAXCEL .byte 0
+cel_expl .byte 0        ; celula que exploto al dispararle
+ecuenta .byte 0         ; pasos que quedan de la explosion de la celula
 
 ; direcciones de Kaiju (medidas en el original): desplazamiento en casillas
 ; 0 arr-izq, 1 arr, 2 izq, 3 aba-izq, 4 aba-der, 5 aba, 6 der, 7 arr-der, 8 quieto

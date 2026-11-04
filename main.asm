@@ -63,7 +63,8 @@ loop
         ldy #10
         jsr mensaje
         jmp partida
-fallo   ; se disparo a una celula: -1 de energia y se repite la etapa
+fallo   ; se disparo a una celula: explota, -1 de energia y se repite la etapa
+        jsr explotar_celula
         dec energia
         beq perdio
         lda #<kaiju_txt_tryagain

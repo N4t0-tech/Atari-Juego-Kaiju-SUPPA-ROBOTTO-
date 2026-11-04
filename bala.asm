@@ -71,8 +71,7 @@ bal_cel and #$7F
         bcc chocar        ; borde o ladrillo
         cmp #$1C
         bcs bal_rob
-        lda #1            ; celula: fin de la etapa (se repite)
-        sta fin
+        jsr romper_celula ; celula: explota y fin de la etapa (se repite)
         jmp matar
 bal_rob cmp #$34
         bcs chocar        ; bloque solido ($34+)
