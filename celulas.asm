@@ -174,3 +174,57 @@ co_col  lda RANDOM
         lda RANDOM
         sta COLOR2
 co_fin  rts
+
+; animacion de etapa superada (el juego queda congelado): el nivel se borra
+; fila por fila de arriba abajo, el robot baila (baile_*: una pose cada 4
+; pasos, saltando en algunas) y suena un tono que sube. cargar_etapa
+; redibuja el mapa de la etapa siguiente
+celebrar
+        jsr borrabala   ; la bala o las chispas que hubiera
+        lda #0
+        sta activa
+        sta chispa
+        sta invul       ; que no parpadee mientras baila
+        sta ecuenta     ; aqui cuenta hacia arriba: 0..39
+        lda py
+        sta oldy        ; altura del suelo (los saltos suben desde aqui)
+ce_paso jsr esperar_paso
+        lda ecuenta
+        and #7
+        bne ce_snd
+        lda #SND_VICTORIA
+        jsr sonar
+ce_snd  jsr actualizar_sonido
+        jsr borrar_jugador
+        lda ecuenta     ; tiempo del baile = (ecuenta / 4) % 8
+        lsr
+        lsr
+        and #7
+        tax
+        lda baile_pose,x
+        sta pose
+        lda baile_espejo,x
+        sta espejo
+        lda oldy
+        sec
+        sbc baile_salto,x
+        sta py
+        jsr dibujar_jugador
+        ldy ecuenta     ; pasos 1-23: se borra esa fila
+        beq ce_sig
+        cpy #24
+        bcs ce_sig
+        lda filas_lo,y
+        sta ptr
+        lda filas_hi,y
+        sta ptr+1
+        lda #0
+        ldy #39
+ce_fila sta (ptr),y
+        dey
+        bpl ce_fila
+ce_sig  inc ecuenta
+        lda ecuenta
+        cmp #40
+        bne ce_paso
+        jmp actualizar_sonido

@@ -54,6 +54,7 @@ loop
         lda celrest
         bne loop
         ; etapa superada
+        jsr celebrar
         inc etapa
         lda etapa
         cmp #30

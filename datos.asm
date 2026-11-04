@@ -93,7 +93,7 @@ cel_x   :MAXCEL .byte 0
 cel_y   :MAXCEL .byte 0
 cel_viva :MAXCEL .byte 0
 cel_expl .byte 0        ; celula que exploto al dispararle
-ecuenta .byte 0         ; pasos que quedan de la explosion de la celula
+ecuenta .byte 0         ; contador de las animaciones explotar_celula y celebrar
 
 ; direcciones de Kaiju (medidas en el original): desplazamiento en casillas
 ; 0 arr-izq, 1 arr, 2 izq, 3 aba-izq, 4 aba-der, 5 aba, 6 der, 7 arr-der, 8 quieto
@@ -108,9 +108,10 @@ SND_RECOGER = 1
 SND_GOLPE   = 2
 SND_EXPLOSION = 3       ; ruido que va bajando
 SND_IMPACTO = 4         ; robot herido: zumbido que va subiendo
-snd_base .byte 20,60,40,30,50
-snd_paso .byte 6,$FC,12,24,$F8
-snd_dist .byte $A0,$A0,$80,$80,$C0      ; $A = tono puro, $8 = ruido
+SND_VICTORIA = 5        ; etapa superada: tono que va subiendo
+snd_base .byte 20,60,40,30,50,120
+snd_paso .byte 6,$FC,12,24,$F8,$F4
+snd_dist .byte $A0,$A0,$80,$80,$C0,$A0      ; $A = tono puro, $8 = ruido
 
 txt_level .byte $28,$29,$2A,$29,$28     ; "LEVEL" con la fuente de Kaiju
 hud_dirty .byte 1       ; 1 = hay que redibujar el HUD
@@ -157,6 +158,11 @@ POSE_QUIETO_DER = 0
 POSE_CAMINA_A   = 1     ; + paso: 2 = camina B
 POSE_ARRIBA_A   = 3     ; + paso: 4 = de espaldas B
 POSE_QUIETO_IZQ = 5
+; baile de etapa superada (celebrar): pose, espejo y salto (lineas) por tiempo
+baile_pose   .byte POSE_QUIETO_DER,POSE_CAMINA_A,POSE_QUIETO_IZQ,POSE_CAMINA_A
+             .byte POSE_ARRIBA_A,POSE_ARRIBA_A+1,POSE_CAMINA_A+1,POSE_CAMINA_A+1
+baile_espejo .byte 0,0,0,$80,0,0,0,$80
+baile_salto  .byte 0,4,0,4,0,6,0,6
 poses_lo .byte <kaiju_quieto_der_p0,<kaiju_camina_a_p0,<kaiju_camina_b_p0
         .byte <kaiju_arriba_a_p0,<kaiju_arriba_b_p0,<kaiju_quieto_izq_p0
 poses_hi .byte >kaiju_quieto_der_p0,>kaiju_camina_a_p0,>kaiju_camina_b_p0
