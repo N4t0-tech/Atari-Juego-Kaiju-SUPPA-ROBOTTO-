@@ -82,6 +82,22 @@
              border-radius:8px; font:12px/1.5 monospace; padding:8px 10px; resize:vertical; margin:8px 0 0; white-space:pre; overflow-wrap:normal; overflow-x:auto; scrollbar-color:#3a3d46 #0c0d10; }
 
   /* selector de paleta */
+  /* ayuda */
+  .btn-ayuda { margin-left:auto; width:24px; height:24px; padding:0; justify-content:center; border-radius:50%;
+               font:600 13px system-ui, sans-serif; color:var(--suave); }
+  .btn-ayuda:hover { color:var(--acento); }
+  #dlg-ayuda { background:var(--panel); color:var(--texto); border:1px solid var(--borde); border-radius:14px; padding:0;
+               width:min(560px, 92vw); max-height:85vh; box-shadow:0 20px 60px #000a; }
+  #dlg-ayuda::backdrop { background:#000b; }
+  #dlg-ayuda .dentro { padding:20px 22px; }
+  #dlg-ayuda h2 { font-size:16px; margin:0 0 12px; display:flex; align-items:center; }
+  #dlg-ayuda h2 button { margin-left:auto; }
+  #ayuda-cuerpo { color:#c9cad3; }
+  #ayuda-cuerpo p { margin:0 0 10px; }
+  #ayuda-cuerpo ol, #ayuda-cuerpo ul { margin:0 0 10px; padding-left:20px; }
+  #ayuda-cuerpo li { margin-bottom:5px; }
+  #ayuda-cuerpo strong { color:var(--texto); }
+  .consejo { background:#1d2a2f; border-left:3px solid var(--acento); border-radius:6px; padding:8px 12px; margin-top:4px; }
   #paleta { display:none; position:fixed; inset:0; background:#000b; align-items:center; justify-content:center; z-index:10; }
   #paleta .caja { background:var(--panel); border:1px solid var(--borde); border-radius:14px; padding:18px;
                   max-width:95vw; max-height:95vh; overflow:auto; box-shadow:0 20px 60px #000a; }
@@ -96,12 +112,13 @@
 <header>
   <h1>Editor de titulo .mic</h1>
   <p class="suave">Imagen de inicio del juego · ANTIC E · 160×196 · 4 colores, fondo negro</p>
+  <button data-ayuda="general">? Como se usa</button>
   <button class="primario" id="bmic">Descargar kaiju_titulo.mic</button>
 </header>
 
 <main>
   <section class="tarjeta">
-    <h2><span class="paso">2</span>Editar</h2>
+    <h2><span class="paso">2</span>Editar<button class="btn-ayuda" data-ayuda="editar" aria-label="Ayuda: Editar" title="Ayuda">?</button></h2>
     <div id="pantalla">
       <canvas id="lienzo" width="160" height="196"></canvas>
       <div id="texto"></div>
@@ -112,7 +129,7 @@
 
   <aside>
     <section class="tarjeta" id="t-imagen">
-      <h2><span class="paso">1</span>Imagen</h2>
+      <h2><span class="paso">1</span>Imagen<button class="btn-ayuda" data-ayuda="imagen" aria-label="Ayuda: Imagen" title="Ayuda">?</button></h2>
       <label id="zona">
         <strong>Abrir PNG o JPG</strong>
         <span class="suave">se convierte a 4 colores</span>
@@ -128,13 +145,13 @@
     </section>
 
     <section class="tarjeta">
-      <h2><span class="paso">3</span>Colores</h2>
+      <h2><span class="paso">3</span>Colores<button class="btn-ayuda" data-ayuda="colores" aria-label="Ayuda: Colores" title="Ayuda">?</button></h2>
       <p class="suave" style="margin-bottom:8px">Clic en un color para pintar con el · <em>Cambiar</em> elige otro de la paleta Atari.</p>
       <div class="slots" id="slots"></div>
     </section>
 
     <section class="tarjeta">
-      <h2><span class="paso">4</span>Texto de abajo</h2>
+      <h2><span class="paso">4</span>Texto de abajo<button class="btn-ayuda" data-ayuda="texto" aria-label="Ayuda: Texto de abajo" title="Ayuda">?</button></h2>
       <p class="suave" style="margin-bottom:8px">Lo que va entre <code>[ ]</code> sale con COLOR2, el resto con COLOR0. Se centra en 20 caracteres.</p>
       <div class="campo"><input type="text" id="ftexto" value="MUVIRON  [SOULBATTERY]" spellcheck="false" autocomplete="off"><span id="cuenta"></span></div>
       <p class="suave" id="aviso-texto"></p>
@@ -144,13 +161,81 @@
     </section>
 
     <section class="tarjeta">
-      <h2><span class="paso">5</span>Al juego</h2>
+      <h2><span class="paso">5</span>Al juego<button class="btn-ayuda" data-ayuda="juego" aria-label="Ayuda: Al juego" title="Ayuda">?</button></h2>
       <p class="suave">Guarda el .mic como <code>kaiju_titulo.mic</code>, pega esto en <code>kaiju_titulo.asm</code> y recompila.</p>
       <textarea id="asm" readonly></textarea>
       <div class="botones" style="margin-top:8px"><button id="bcopiar">Copiar colores</button></div>
     </section>
   </aside>
 </main>
+
+<dialog id="dlg-ayuda" aria-labelledby="ayuda-titulo"><div class="dentro">
+  <h2><span id="ayuda-titulo"></span><button id="ayuda-cerrar">Cerrar</button></h2>
+  <div id="ayuda-cuerpo"></div>
+</div></dialog>
+
+<template id="ay-general" data-titulo="Como se usa el editor">
+  <p>Este editor prepara la <strong>pantalla de inicio</strong> del juego: la imagen y la linea de texto de abajo.</p>
+  <ol>
+    <li><strong>Imagen:</strong> abre un PNG/JPG (se convierte solo) o un <code>.mic</code> existente.</li>
+    <li><strong>Editar:</strong> retoca pixel a pixel sobre el lienzo.</li>
+    <li><strong>Colores:</strong> elige los 3 colores de la imagen (el fondo siempre es negro).</li>
+    <li><strong>Texto de abajo:</strong> escribe la linea que sale debajo de la imagen.</li>
+    <li><strong>Al juego:</strong> descarga el <code>.mic</code>, copia los colores y el texto en el proyecto y recompila.</li>
+  </ol>
+  <p class="consejo">Cada paso tiene su boton <strong>?</strong> con mas detalle.</p>
+</template>
+
+<template id="ay-imagen" data-titulo="1 · Cargar una imagen">
+  <p>El Atari muestra esta pantalla con <strong>160×196 pixeles</strong> el doble de anchos que altos y <strong>4 colores</strong>, uno de ellos negro (el fondo).</p>
+  <ul>
+    <li><strong>Abrir PNG o JPG:</strong> la imagen se escala y se reduce a 4 colores de la paleta Atari. Lo ideal: 320×196 (o 640×392), colores planos, sin degradados.</li>
+    <li><strong>Tramado:</strong> mezcla pixeles para imitar colores intermedios. Util en degradados o fotos; en dibujos planos suele verse peor.</li>
+    <li><strong>Mantener proporcion:</strong> si la imagen no tiene la forma de la pantalla, la centra con bandas negras en vez de deformarla.</li>
+    <li><strong>Colores fijos:</strong> en vez de elegir los colores solo, usa los del paso 3.</li>
+    <li><strong>Reconvertir:</strong> repite la conversion de la ultima imagen con las opciones actuales.</li>
+    <li><strong>Abrir .mic:</strong> carga una imagen ya hecha (por ejemplo el <code>kaiju_titulo.mic</code> actual) para retocarla. Mantiene los colores del editor.</li>
+  </ul>
+  <p class="consejo">Si no te gustan los colores automaticos: cambialos en el paso 3, activa <strong>Colores fijos</strong> y pulsa <strong>Reconvertir</strong>.</p>
+</template>
+
+<template id="ay-editar" data-titulo="2 · Editar la imagen">
+  <ul>
+    <li><strong>Clic y arrastrar:</strong> pinta con el color seleccionado en el paso 3.</li>
+    <li><strong>Clic derecho:</strong> borra (pinta con el fondo negro).</li>
+    <li><strong>Ctrl+Z:</strong> deshace (hasta 50 pasos; solo pixeles, no colores).</li>
+  </ul>
+  <p>Cada pixel del lienzo es un pixel real del Atari: por eso se ven mas anchos que altos.</p>
+  <p class="consejo">La linea de texto bajo el lienzo es la del juego. Usa los colores COLOR0 y COLOR2 de la imagen, asi que cambia si cambias esos colores.</p>
+</template>
+
+<template id="ay-colores" data-titulo="3 · Colores">
+  <ul>
+    <li><strong>Clic en un color:</strong> lo elige para pintar en el lienzo.</li>
+    <li><strong>Cambiar:</strong> abre la paleta Atari (128 colores). Al elegir uno, <strong>todos</strong> los pixeles de ese color cambian a la vez.</li>
+    <li><strong>Fondo:</strong> siempre negro ($00); el juego no lo cambia en esta pantalla.</li>
+  </ul>
+  <p class="consejo">Los valores tipo <code>$C8</code> son los que se copian en <code>kaiju_titulo.asm</code> (paso 5).</p>
+</template>
+
+<template id="ay-texto" data-titulo="4 · Texto de abajo">
+  <ul>
+    <li>Ocupa <strong>exactamente 20 caracteres</strong>. Si escribes menos, se centra con espacios; si te pasas, el contador se pone en rojo.</li>
+    <li>Lo que va entre <code>[ ]</code> sale con <strong>COLOR2</strong>; el resto con <strong>COLOR0</strong>. Ejemplo: <code>MI JUEGO [2026]</code>.</li>
+    <li>Solo mayusculas, numeros y signos basicos. Las minusculas se pasan a mayusculas; letras como ñ, tildes o <code>'</code> se ignoran.</li>
+  </ul>
+  <p class="consejo">Copia la linea generada y reemplaza la linea <code>kaiju_txt_titulo</code> en <code>kaiju_graficos.asm</code>.</p>
+</template>
+
+<template id="ay-juego" data-titulo="5 · Llevarlo al juego">
+  <ol>
+    <li>Pulsa <strong>Descargar kaiju_titulo.mic</strong> y reemplaza el archivo del mismo nombre en la carpeta del proyecto.</li>
+    <li><strong>Copiar colores</strong> y pega las 4 lineas en <code>kaiju_titulo.asm</code>, en lugar de las <code>KAIJU_TITULO_COLOR*</code>.</li>
+    <li>Si cambiaste el texto: <strong>Copiar texto</strong> (paso 4) y pegalo en <code>kaiju_graficos.asm</code>.</li>
+    <li>Compila con <code>mads main.asm -o:juego.xex</code> y pruebalo en Altirra.</li>
+  </ol>
+  <p class="consejo">Sin el paso 2 el juego usaria los colores viejos: el juego toma los colores del <code>.asm</code>, no del archivo <code>.mic</code>.</p>
+</template>
 
 <div id="paleta"><div class="caja">
   <h2 id="ptitulo">Elegir color</h2>
@@ -379,6 +464,16 @@ function pintarTexto() {
 }
 document.getElementById('ftexto').addEventListener('input', pintarTexto);
 document.getElementById('bcopiar-texto').addEventListener('click', () => navigator.clipboard.writeText(document.getElementById('asm-texto').value));
+// ---------- ayuda: cada boton ? abre su <template id="ay-..."> en el dialogo ----------
+const dlgAyuda = document.getElementById('dlg-ayuda');
+document.querySelectorAll('[data-ayuda]').forEach(b => b.addEventListener('click', () => {
+  const t = document.getElementById('ay-' + b.dataset.ayuda);
+  document.getElementById('ayuda-titulo').textContent = t.dataset.titulo;
+  document.getElementById('ayuda-cuerpo').replaceChildren(t.content.cloneNode(true));
+  dlgAyuda.showModal();
+}));
+document.getElementById('ayuda-cerrar').addEventListener('click', () => dlgAyuda.close());
+dlgAyuda.addEventListener('click', e => { if (e.target === dlgAyuda) dlgAyuda.close(); });   // clic fuera
 document.getElementById('bcopiar').addEventListener('click', () => navigator.clipboard.writeText(document.getElementById('asm').value));
 
 refrescar();
