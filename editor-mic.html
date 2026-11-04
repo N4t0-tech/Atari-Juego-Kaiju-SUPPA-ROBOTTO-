@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor de titulo MIC</title>
+<style>
+  :root { --fondo:#15161a; --panel:#1f2127; --borde:#33363f; --texto:#e8e8ec; --suave:#9a9cab; --acento:#4fc3d9; }
+  * { box-sizing:border-box; }
+  body { background:var(--fondo); color:var(--texto); font:14px/1.45 system-ui, sans-serif; margin:0; padding:16px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  h2 { font-size:15px; margin:0 0 10px; }
+  p { margin:0 0 8px; }
+  .ayuda { color:var(--suave); max-width:75em; }
+  .panel { background:var(--panel); border:1px solid var(--borde); border-radius:10px; padding:14px; margin-top:16px; }
+  .fila { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .grupo { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+  button, label.boton { background:#2b2e36; color:var(--texto); border:1px solid var(--borde); border-radius:6px;
+           padding:6px 10px; cursor:pointer; font:inherit; }
+  button:hover, label.boton:hover { border-color:var(--acento); }
+  input[type=file] { display:none; }
+  #pantalla { background:#000; padding:12px 0 0; border:1px solid var(--borde); border-radius:4px; width:100%; max-width:664px; }
+  #lienzo { image-rendering:pixelated; display:block; width:100%; aspect-ratio:640/392; cursor:crosshair; touch-action:none; }
+  #texto { font:bold 22px/32px monospace; text-align:center; letter-spacing:4px; white-space:pre; }
+  .slots { display:flex; gap:8px; flex-wrap:wrap; }
+  .slot { display:flex; align-items:center; gap:8px; padding:6px 8px; border:2px solid var(--borde);
+          border-radius:8px; cursor:pointer; background:#262930; min-width:150px; }
+  .slot.sel { border-color:var(--acento); background:#203a41; }
+  .slot small { display:block; color:var(--suave); font-size:11px; }
+  .slot button { padding:2px 6px; font-size:12px; margin-left:auto; }
+  .muestra { width:26px; height:26px; border-radius:5px; border:1px solid #0008; flex:none; }
+  textarea { width:100%; max-width:40em; height:6em; background:#111; color:#b9e3ec; border:1px solid var(--borde);
+             border-radius:6px; font:12px monospace; padding:8px; }
+  #paleta { display:none; position:fixed; inset:0; background:#000a; align-items:center; justify-content:center; }
+  #paleta .caja { background:var(--panel); border:1px solid var(--borde); border-radius:12px; padding:16px; max-width:95vw; max-height:95vh; overflow:auto; }
+  #pgrid { display:grid; grid-template-columns:repeat(8, 26px); gap:3px; }
+  #pgrid div { width:26px; height:20px; border-radius:3px; cursor:pointer; border:2px solid transparent; }
+  #pgrid div.sel, #pgrid div:hover { border-color:#fff; }
+</style>
+</head>
+<body>
+<h1>Editor de la imagen de titulo (.mic)</h1>
+<p class="ayuda">Convierte un PNG/JPG a la pantalla de titulo del juego (ANTIC E: 160×196, pixeles el doble de anchos, 4 colores con fondo negro) o edita un <code>.mic</code>. Al terminar: guarda el <code>.mic</code> como <code>kaiju_titulo.mic</code> en el proyecto, copia los colores en <code>kaiju_titulo.asm</code> y recompila.</p>
+
+<div class="panel">
+  <h2>1. Cargar</h2>
+  <div class="grupo">
+    <label class="boton">Abrir imagen (PNG/JPG)…<input type="file" id="fimg" accept="image/*"></label>
+    <label><input type="checkbox" id="tramado"> Tramado (para degradados)</label>
+    <label><input type="checkbox" id="proporcion" checked> Mantener proporcion</label>
+    <label><input type="checkbox" id="fijos"> Usar los colores elegidos (no automaticos)</label>
+    <button id="reconv" disabled>Reconvertir</button>
+  </div>
+  <div class="grupo">
+    <label class="boton">Abrir .mic…<input type="file" id="fmic" accept=".mic"></label>
+    <span class="ayuda">Mantiene los colores actuales: el juego usa los de <code>kaiju_titulo.asm</code>, no los del archivo.</span>
+  </div>
+</div>
+
+<div class="panel fila">
+  <div style="flex:1 1 400px">
+    <h2>2. Editar</h2>
+    <div id="pantalla">
+      <canvas id="lienzo" width="160" height="196"></canvas>
+      <div id="texto"></div>
+    </div>
+    <p class="ayuda">Clic/arrastrar: pintar con el color elegido. Clic derecho: fondo. <kbd>Ctrl+Z</kbd> deshacer. Abajo, la linea de texto del juego (usa COLOR0 y COLOR2).</p>
+  </div>
+  <div>
+    <h2>Colores</h2>
+    <div class="slots" id="slots" style="flex-direction:column"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>3. Guardar</h2>
+  <div class="grupo"><button id="bmic">Descargar kaiju_titulo.mic</button><button id="bcopiar">Copiar colores</button></div>
+  <p class="ayuda">Pega esto en <code>kaiju_titulo.asm</code> en lugar de las lineas <code>KAIJU_TITULO_COLOR*</code>:</p>
+  <textarea id="asm" readonly></textarea>
+</div>
+
+<div id="paleta"><div class="caja">
+  <h2 id="ptitulo">Elegir color</h2>
+  <div id="pgrid"></div>
+  <p id="pinfo" class="ayuda"></p>
+  <button id="pcerrar">Cerrar</button>
+</div></div>
+
+<script>
+const AN = 160, AL = 196, AL_MIC = 240;   // el juego muestra 196 de las 240 lineas del .mic
+const hex = v => '$' + v.toString(16).toUpperCase().padStart(2, '0');
+
+// paleta Atari aproximada (misma formula que editor-sprite.html)
+function atariRGB(v) {
+  const h = v >> 4, l = v & 0x0E;
+  let y = l / 14, i = 0, q = 0;
+  if (h) {
+    y = 0.07 + y * 0.86;
+    const a = (-45 + (h - 1) * 25.7) * Math.PI / 180, c = 0.22;
+    i = c * Math.cos(a); q = c * Math.sin(a);
+  }
+  const k = x => Math.max(0, Math.min(255, Math.round(x * 255)));
+  return [k(y + 0.956 * i + 0.621 * q), k(y - 0.272 * i - 0.647 * q), k(y - 1.106 * i + 1.703 * q)];
+}
+const VALORES = Array.from({ length: 128 }, (_, n) => n * 2);
+const RGB = {}; VALORES.forEach(v => RGB[v] = atariRGB(v));
+const css = v => `rgb(${RGB[v].join(',')})`;
+const dist = (a, b) => 2 * (a[0] - b[0]) ** 2 + 4 * (a[1] - b[1]) ** 2 + 3 * (a[2] - b[2]) ** 2;
+const masCercano = (c, lista) => lista.reduce((m, v, i) => dist(c, v) < dist(c, lista[m]) ? i : m, 0);
+
+// estado: pixeles 0-3 de las 240 lineas; colores [COLOR4 (fijo negro), COLOR0, COLOR1, COLOR2]
+let pix = new Uint8Array(AN * AL_MIC);
+let col = [0x00, 0xC8, 0xDE, 0xCC];      // los de kaiju_titulo.asm
+let sel = 1, ultimaImagen = null;
+const deshacer = [];
+
+// ---------- dibujo ----------
+const lienzo = document.getElementById('lienzo'), ctx = lienzo.getContext('2d');
+function pintar() {
+  const img = ctx.createImageData(AN, AL);
+  for (let i = 0; i < AN * AL; i++) {
+    const c = RGB[col[pix[i]]];
+    img.data.set([c[0], c[1], c[2], 255], i * 4);
+  }
+  ctx.putImageData(img, 0, 0);
+  const t = document.getElementById('texto');
+  t.innerHTML = `<span style="color:${css(col[1])}">MUVIRON  </span><span style="color:${css(col[3])}">SOULBATTERY</span>`;
+  document.getElementById('asm').value =
+    ['pixel 01', 'pixel 10', 'pixel 11'].map((n, i) => `KAIJU_TITULO_COLOR${i}     = ${hex(col[i + 1])}   ; ${n}`).join('\n') +
+    `\nKAIJU_TITULO_COLOR4     = $00   ; pixel 00 (fondo)`;
+}
+function pintarSlots() {
+  const s = document.getElementById('slots'); s.innerHTML = '';
+  ['Fondo (pixel 00)', 'COLOR0 (pixel 01)', 'COLOR1 (pixel 10)', 'COLOR2 (pixel 11)'].forEach((nom, i) => {
+    const d = document.createElement('div');
+    d.className = 'slot' + (i === sel ? ' sel' : '');
+    d.innerHTML = `<div class="muestra" style="background:${css(col[i])}"></div><div>${nom}<small>${hex(col[i])}${i ? '' : ' · fijo en el juego'}</small></div>` +
+      (i ? '<button>Cambiar</button>' : '');
+    d.addEventListener('click', e => { if (e.target.tagName === 'BUTTON') abrirPaleta(i); else { sel = i; pintarSlots(); } });
+    s.appendChild(d);
+  });
+}
+function refrescar() { pintarSlots(); pintar(); }
+
+function guardarDeshacer() { deshacer.push(pix.slice()); if (deshacer.length > 50) deshacer.shift(); }
+let trazando = false, valorTrazo = 0;
+function puntoEn(e) {
+  const r = lienzo.getBoundingClientRect();
+  return [Math.floor((e.clientX - r.left) / r.width * AN), Math.floor((e.clientY - r.top) / r.height * AL)];
+}
+function pintarEn(e) {
+  const [x, y] = puntoEn(e);
+  if (x < 0 || y < 0 || x >= AN || y >= AL) return;
+  pix[y * AN + x] = valorTrazo; pintar();
+}
+lienzo.addEventListener('contextmenu', e => e.preventDefault());
+lienzo.addEventListener('pointerdown', e => {
+  guardarDeshacer(); trazando = true; valorTrazo = e.button === 2 ? 0 : sel;
+  lienzo.setPointerCapture(e.pointerId); pintarEn(e);
+});
+lienzo.addEventListener('pointermove', e => { if (trazando) pintarEn(e); });
+lienzo.addEventListener('pointerup', () => trazando = false);
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && deshacer.length) { pix = deshacer.pop(); pintar(); }
+  if (e.key === 'Escape') cerrarPaleta();
+});
+
+// ---------- paleta ----------
+let slotPaleta = 0;
+function abrirPaleta(i) {
+  slotPaleta = i;
+  document.getElementById('ptitulo').textContent = 'Elegir COLOR' + (i - 1);
+  const g = document.getElementById('pgrid'); g.innerHTML = '';
+  VALORES.forEach(v => {
+    const c = document.createElement('div');
+    c.style.background = css(v); c.title = hex(v);
+    if (v === col[i]) c.className = 'sel';
+    c.addEventListener('mouseenter', () => document.getElementById('pinfo').textContent = hex(v));
+    c.addEventListener('click', () => { col[slotPaleta] = v; cerrarPaleta(); refrescar(); });
+    g.appendChild(c);
+  });
+  document.getElementById('paleta').style.display = 'flex';
+}
+function cerrarPaleta() { document.getElementById('paleta').style.display = 'none'; }
+document.getElementById('pcerrar').addEventListener('click', cerrarPaleta);
+document.getElementById('paleta').addEventListener('click', e => { if (e.target.id === 'paleta') cerrarPaleta(); });
+
+// ---------- conversion de imagen ----------
+// escala a 160x196 (en pantalla equivale a 320x196 de pixeles cuadrados)
+function muestrear(img) {
+  const c = document.createElement('canvas'); c.width = AN; c.height = AL;
+  const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, AN, AL);
+  g.imageSmoothingQuality = 'high';
+  if (document.getElementById('proporcion').checked) {
+    const esc = Math.min(320 / img.width, AL / img.height), w = img.width * esc, h = img.height * esc;
+    g.drawImage(img, (320 - w) / 4, (AL - h) / 2, w / 2, h);
+  } else g.drawImage(img, 0, 0, AN, AL);
+  const d = g.getImageData(0, 0, AN, AL).data, px = [];
+  for (let i = 0; i < AN * AL; i++) px.push([d[i * 4], d[i * 4 + 1], d[i * 4 + 2]]);
+  return px;
+}
+// k-medias con 4 centros, el negro fijo; luego cada centro al color Atari mas cercano
+function coloresAuto(px) {
+  const cen = [[0, 0, 0]];
+  while (cen.length < 4) {   // inicio: el pixel mas lejos de los centros ya elegidos
+    let mejor = px[0], dm = -1;
+    for (let i = 0; i < px.length; i += 7) {
+      const d = Math.min(...cen.map(c => dist(px[i], c)));
+      if (d > dm) { dm = d; mejor = px[i]; }
+    }
+    cen.push(mejor.slice());
+  }
+  for (let it = 0; it < 12; it++) {
+    const suma = cen.map(() => [0, 0, 0, 0]);
+    px.forEach(p => { const s = suma[masCercano(p, cen)]; s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; s[3]++; });
+    for (let k = 1; k < 4; k++) if (suma[k][3]) cen[k] = suma[k].slice(0, 3).map(v => v / suma[k][3]);
+  }
+  const atari = VALORES.map(v => RGB[v]);
+  return [0, ...cen.slice(1).map(c => VALORES[masCercano(c, atari)])];
+}
+function convertir(img) {
+  const px = muestrear(img);
+  if (!document.getElementById('fijos').checked) col = coloresAuto(px);
+  const pal = col.map(v => RGB[v]), tramado = document.getElementById('tramado').checked;
+  guardarDeshacer();
+  pix = new Uint8Array(AN * AL_MIC);
+  for (let y = 0; y < AL; y++) for (let x = 0; x < AN; x++) {
+    const i = y * AN + x, p = px[i], k = masCercano(p, pal);
+    pix[i] = k;
+    if (!tramado) continue;   // Floyd-Steinberg
+    const err = p.map((v, j) => v - pal[k][j]);
+    [[1, 0, 7], [-1, 1, 3], [0, 1, 5], [1, 1, 1]].forEach(([dx, dy, w]) => {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || xx >= AN || yy >= AL) return;
+      const q = px[yy * AN + xx];
+      for (let j = 0; j < 3; j++) q[j] += err[j] * w / 16;
+    });
+  }
+  refrescar();
+}
+document.getElementById('fimg').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => { ultimaImagen = img; document.getElementById('reconv').disabled = false; convertir(img); };
+  img.src = URL.createObjectURL(f);
+  e.target.value = '';
+});
+document.getElementById('reconv').addEventListener('click', () => ultimaImagen && convertir(ultimaImagen));
+
+// ---------- .mic: 40 bytes por linea, 4 pixeles por byte (bits 7-6 el primero) ----------
+document.getElementById('fmic').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const b = new Uint8Array(await f.arrayBuffer());
+  guardarDeshacer();
+  pix = new Uint8Array(AN * AL_MIC);
+  for (let i = 0; i < Math.min(b.length, AN * AL_MIC / 4); i++)
+    for (let s = 0; s < 4; s++) pix[i * 4 + s] = (b[i] >> (6 - s * 2)) & 3;
+  e.target.value = '';
+  pintar();
+});
+document.getElementById('bmic').addEventListener('click', () => {
+  const b = new Uint8Array(AN * AL_MIC / 4 + 4);
+  for (let i = 0; i < AN * AL_MIC / 4; i++)
+    b[i] = pix[i * 4] << 6 | pix[i * 4 + 1] << 4 | pix[i * 4 + 2] << 2 | pix[i * 4 + 3];
+  b.set([col[0], col[1], col[2], col[3]], AN * AL_MIC / 4);   // COLOR4, COLOR0, COLOR1, COLOR2
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([b])); a.download = 'kaiju_titulo.mic'; a.click();
+});
+document.getElementById('bcopiar').addEventListener('click', () => navigator.clipboard.writeText(document.getElementById('asm').value));
+
+refrescar();
+</script>
+</body>
+</html>
