@@ -52,6 +52,10 @@ Atari 8-bit game in 6502 assembly (MADS assembler): a recreation of the Kaiju / 
 - Export emits `.byte` blocks for `datos.asm`, a `lda/sta` color block for `iniciar` in `main.asm` (only COLOR3/COLOR4 and similar still apply; robot colors live in `KAIJU_PCOLR0/1`), and a `kaiju_graficos.asm` block (equates + `kaiju_<pose>_p0/_p1`). Apply the parts that changed when the user pastes it.
 - Import finds byte blocks by label (order-independent) and colors by `lda #…`/`sta REG` pairs. Drafts autosave to `localStorage`. `INICIAL` (and `INICIAL.kaiju`) are hardcoded copies of the data: refresh them every time those bytes change.
 
+## Title editor (`editor-mic.html`)
+
+- Opens in any browser, no build: converts a PNG/JPG to the title picture (160×196 ANTIC E, 4 colors, background fixed black; auto colors by k-means snapped to the Atari palette, optional Floyd-Steinberg dithering) or edits a `.mic`; pencil + undo. Downloads `kaiju_titulo.mic` (240 lines + 4 color bytes COLOR4,0,1,2) and gives the `KAIJU_TITULO_COLOR*` lines for `kaiju_titulo.asm` (the game uses those, not the file's color bytes). Its text-line preview uses COLOR0/COLOR2 like the real ANTIC 7 line.
+
 ## Kaiju resources (`kaiju_*.asm`)
 
 - Converted from the Kaiju disk (`~/KAIJU CODIGO FUENTE/`, cc65-compiled — no C or asm source), verified byte-for-byte.
