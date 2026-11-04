@@ -5,84 +5,140 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Editor de titulo MIC</title>
 <style>
-  :root { --fondo:#15161a; --panel:#1f2127; --borde:#33363f; --texto:#e8e8ec; --suave:#9a9cab; --acento:#4fc3d9; }
+  :root { --fondo:#111216; --panel:#1b1d23; --panel2:#23262e; --borde:#30333c; --texto:#e8e8ec; --suave:#8f92a1;
+          --acento:#4fc3d9; --acento-osc:#1d4650; --radio:12px; }
   * { box-sizing:border-box; }
-  body { background:var(--fondo); color:var(--texto); font:14px/1.45 system-ui, sans-serif; margin:0; padding:16px; }
-  h1 { font-size:20px; margin:0 0 4px; }
-  h2 { font-size:15px; margin:0 0 10px; }
-  p { margin:0 0 8px; }
-  .ayuda { color:var(--suave); max-width:75em; }
-  .panel { background:var(--panel); border:1px solid var(--borde); border-radius:10px; padding:14px; margin-top:16px; }
-  .fila { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
-  .grupo { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
-  button, label.boton { background:#2b2e36; color:var(--texto); border:1px solid var(--borde); border-radius:6px;
-           padding:6px 10px; cursor:pointer; font:inherit; }
-  button:hover, label.boton:hover { border-color:var(--acento); }
+  body { background:var(--fondo); color:var(--texto); font:14px/1.5 system-ui, sans-serif; margin:0; }
+  code { color:#b9e3ec; font-size:12.5px; }
+  kbd { background:var(--panel2); border:1px solid var(--borde); border-bottom-width:2px; border-radius:4px; padding:0 5px; font-size:11.5px; }
+  .suave { color:var(--suave); font-size:12.5px; margin:0; }
+
+  header { display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:14px 24px;
+           border-bottom:1px solid var(--borde); background:var(--panel); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:17px; margin:0; letter-spacing:.2px; }
+  header .suave { flex:1; min-width:220px; }
+
+  main { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:20px; align-items:start; padding:20px 24px; max-width:1240px; margin:0 auto; }
+  aside { display:flex; flex-direction:column; gap:16px; }
+  @media (max-width:900px) {
+    main { display:flex; flex-direction:column; padding:16px; } header { padding:12px 16px; }
+    aside { display:contents; } .tarjeta { width:100%; } #t-imagen { order:-1; }   /* en movil, el paso 1 primero */
+  }
+  .tarjeta { background:var(--panel); border:1px solid var(--borde); border-radius:var(--radio); padding:16px; }
+  .tarjeta h2 { font-size:13px; text-transform:uppercase; letter-spacing:.8px; color:var(--suave); margin:0 0 12px;
+                display:flex; align-items:center; gap:8px; }
+  .paso { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%;
+          background:var(--acento-osc); color:var(--acento); font-size:11px; }
+
+  button, .boton { background:var(--panel2); color:var(--texto); border:1px solid var(--borde); border-radius:8px;
+                   padding:7px 12px; cursor:pointer; font:inherit; display:inline-flex; align-items:center; gap:6px; }
+  button:hover:not(:disabled), .boton:hover { border-color:var(--acento); }
+  button:disabled { opacity:.4; cursor:default; }
+  button.primario { background:var(--acento); border-color:var(--acento); color:#08262d; font-weight:600; }
+  button.primario:hover { filter:brightness(1.1); }
   input[type=file] { display:none; }
-  #pantalla { background:#000; padding:12px 0 0; border:1px solid var(--borde); border-radius:4px; width:100%; max-width:664px; }
+  .botones { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* lienzo */
+  #pantalla { background:#000; border-radius:10px; padding:16px 0 10px; box-shadow:inset 0 0 0 1px #000, 0 0 0 6px #26282f, 0 8px 30px #0008; }
   #lienzo { image-rendering:pixelated; display:block; width:100%; aspect-ratio:640/392; cursor:crosshair; touch-action:none; }
-  #texto { font:bold 22px/32px monospace; text-align:center; letter-spacing:4px; white-space:pre; }
-  .slots { display:flex; gap:8px; flex-wrap:wrap; }
-  .slot { display:flex; align-items:center; gap:8px; padding:6px 8px; border:2px solid var(--borde);
-          border-radius:8px; cursor:pointer; background:#262930; min-width:150px; }
-  .slot.sel { border-color:var(--acento); background:#203a41; }
-  .slot small { display:block; color:var(--suave); font-size:11px; }
-  .slot button { padding:2px 6px; font-size:12px; margin-left:auto; }
-  .muestra { width:26px; height:26px; border-radius:5px; border:1px solid #0008; flex:none; }
-  textarea { width:100%; max-width:40em; height:6em; background:#111; color:#b9e3ec; border:1px solid var(--borde);
-             border-radius:6px; font:12px monospace; padding:8px; }
-  #paleta { display:none; position:fixed; inset:0; background:#000a; align-items:center; justify-content:center; }
-  #paleta .caja { background:var(--panel); border:1px solid var(--borde); border-radius:12px; padding:16px; max-width:95vw; max-height:95vh; overflow:auto; }
-  #pgrid { display:grid; grid-template-columns:repeat(8, 26px); gap:3px; }
-  #pgrid div { width:26px; height:20px; border-radius:3px; cursor:pointer; border:2px solid transparent; }
+  #texto { font:bold clamp(13px, 2.6vw, 22px)/2 monospace; text-align:center; letter-spacing:.25em; white-space:pre; }
+  .pie { margin-top:14px; }
+
+  /* carga */
+  #zona { display:block; border:2px dashed var(--borde); border-radius:10px; padding:18px 12px; text-align:center;
+          cursor:pointer; transition:border-color .15s, background .15s; margin-bottom:12px; }
+  #zona:hover, #zona.encima { border-color:var(--acento); background:#1d2a2f; }
+  #zona strong { display:block; margin-bottom:2px; }
+  .opcion { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; cursor:pointer; }
+  .opcion + .opcion { border-top:1px solid var(--borde); }
+  .opcion small { display:block; color:var(--suave); font-size:11.5px; }
+  .opcion input { appearance:none; width:34px; height:20px; border-radius:10px; background:var(--panel2);
+                  border:1px solid var(--borde); position:relative; cursor:pointer; flex:none; transition:background .15s; }
+  .opcion input::after { content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%;
+                         background:var(--suave); transition:transform .15s, background .15s; }
+  .opcion input:checked { background:var(--acento-osc); border-color:var(--acento); }
+  .opcion input:checked::after { transform:translateX(14px); background:var(--acento); }
+  .opcion input:focus-visible, button:focus-visible, .boton:focus-within, #zona:focus-within { outline:2px solid var(--acento); outline-offset:2px; }
+  .separador { height:1px; background:var(--borde); margin:12px 0; }
+
+  /* colores */
+  .slots { display:flex; flex-direction:column; gap:6px; }
+  .slot { display:flex; align-items:center; gap:10px; padding:7px 9px; border:1px solid var(--borde);
+          border-radius:9px; cursor:pointer; background:var(--panel2); }
+  .slot.sel { border-color:var(--acento); background:#1d3a42; }
+  .slot small { display:block; color:var(--suave); font-size:11.5px; font-family:monospace; }
+  .slot button { padding:3px 9px; font-size:12px; margin-left:auto; }
+  .muestra { width:30px; height:30px; border-radius:7px; border:1px solid #fff2; flex:none; }
+
+  textarea { width:100%; height:88px; background:#0c0d10; color:#b9e3ec; border:1px solid var(--borde);
+             border-radius:8px; font:12px/1.5 monospace; padding:8px 10px; resize:vertical; margin:8px 0 0; }
+
+  /* selector de paleta */
+  #paleta { display:none; position:fixed; inset:0; background:#000b; align-items:center; justify-content:center; z-index:10; }
+  #paleta .caja { background:var(--panel); border:1px solid var(--borde); border-radius:14px; padding:18px;
+                  max-width:95vw; max-height:95vh; overflow:auto; box-shadow:0 20px 60px #000a; }
+  #paleta h2 { font-size:15px; margin:0 0 12px; }
+  #pgrid { display:grid; grid-template-columns:repeat(8, 30px); gap:4px; }
+  #pgrid div { width:30px; height:22px; border-radius:4px; cursor:pointer; border:2px solid transparent; }
   #pgrid div.sel, #pgrid div:hover { border-color:#fff; }
+  #pinfo { font-family:monospace; margin:10px 0; min-height:1.5em; }
 </style>
 </head>
 <body>
-<h1>Editor de la imagen de titulo (.mic)</h1>
-<p class="ayuda">Convierte un PNG/JPG a la pantalla de titulo del juego (ANTIC E: 160×196, pixeles el doble de anchos, 4 colores con fondo negro) o edita un <code>.mic</code>. Al terminar: guarda el <code>.mic</code> como <code>kaiju_titulo.mic</code> en el proyecto, copia los colores en <code>kaiju_titulo.asm</code> y recompila.</p>
+<header>
+  <h1>Editor de titulo .mic</h1>
+  <p class="suave">Imagen de inicio del juego · ANTIC E · 160×196 · 4 colores, fondo negro</p>
+  <button class="primario" id="bmic">Descargar kaiju_titulo.mic</button>
+</header>
 
-<div class="panel">
-  <h2>1. Cargar</h2>
-  <div class="grupo">
-    <label class="boton">Abrir imagen (PNG/JPG)…<input type="file" id="fimg" accept="image/*"></label>
-    <label><input type="checkbox" id="tramado"> Tramado (para degradados)</label>
-    <label><input type="checkbox" id="proporcion" checked> Mantener proporcion</label>
-    <label><input type="checkbox" id="fijos"> Usar los colores elegidos (no automaticos)</label>
-    <button id="reconv" disabled>Reconvertir</button>
-  </div>
-  <div class="grupo">
-    <label class="boton">Abrir .mic…<input type="file" id="fmic" accept=".mic"></label>
-    <span class="ayuda">Mantiene los colores actuales: el juego usa los de <code>kaiju_titulo.asm</code>, no los del archivo.</span>
-  </div>
-</div>
-
-<div class="panel fila">
-  <div style="flex:1 1 400px">
-    <h2>2. Editar</h2>
+<main>
+  <section class="tarjeta">
+    <h2><span class="paso">2</span>Editar</h2>
     <div id="pantalla">
       <canvas id="lienzo" width="160" height="196"></canvas>
       <div id="texto"></div>
     </div>
-    <p class="ayuda">Clic/arrastrar: pintar con el color elegido. Clic derecho: fondo. <kbd>Ctrl+Z</kbd> deshacer. Abajo, la linea de texto del juego (usa COLOR0 y COLOR2).</p>
-  </div>
-  <div>
-    <h2>Colores</h2>
-    <div class="slots" id="slots" style="flex-direction:column"></div>
-  </div>
-</div>
+    <p class="suave pie">Clic y arrastrar pinta con el color elegido · clic derecho borra (fondo) · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace.
+      La linea de abajo es el texto del juego: usa COLOR0 y COLOR2.</p>
+  </section>
 
-<div class="panel">
-  <h2>3. Guardar</h2>
-  <div class="grupo"><button id="bmic">Descargar kaiju_titulo.mic</button><button id="bcopiar">Copiar colores</button></div>
-  <p class="ayuda">Pega esto en <code>kaiju_titulo.asm</code> en lugar de las lineas <code>KAIJU_TITULO_COLOR*</code>:</p>
-  <textarea id="asm" readonly></textarea>
-</div>
+  <aside>
+    <section class="tarjeta" id="t-imagen">
+      <h2><span class="paso">1</span>Imagen</h2>
+      <label id="zona">
+        <strong>Abrir PNG o JPG</strong>
+        <span class="suave">se convierte a 4 colores</span>
+        <input type="file" id="fimg" accept="image/*">
+      </label>
+      <label class="opcion"><span>Tramado<small>Simula degradados mezclando pixeles</small></span><input type="checkbox" id="tramado"></label>
+      <label class="opcion"><span>Mantener proporcion<small>Centra con bandas negras</small></span><input type="checkbox" id="proporcion" checked></label>
+      <label class="opcion"><span>Colores fijos<small>Usa los de abajo en vez de elegirlos solo</small></span><input type="checkbox" id="fijos"></label>
+      <div class="botones" style="margin-top:10px"><button id="reconv" disabled>Reconvertir</button></div>
+      <div class="separador"></div>
+      <div class="botones"><label class="boton">Abrir .mic…<input type="file" id="fmic" accept=".mic"></label></div>
+      <p class="suave" style="margin-top:6px">Mantiene los colores actuales: el juego usa los de <code>kaiju_titulo.asm</code>, no los del archivo.</p>
+    </section>
+
+    <section class="tarjeta">
+      <h2><span class="paso">3</span>Colores</h2>
+      <p class="suave" style="margin-bottom:8px">Clic en un color para pintar con el · <em>Cambiar</em> elige otro de la paleta Atari.</p>
+      <div class="slots" id="slots"></div>
+    </section>
+
+    <section class="tarjeta">
+      <h2><span class="paso">4</span>Al juego</h2>
+      <p class="suave">Guarda el .mic como <code>kaiju_titulo.mic</code>, pega esto en <code>kaiju_titulo.asm</code> y recompila.</p>
+      <textarea id="asm" readonly></textarea>
+      <div class="botones" style="margin-top:8px"><button id="bcopiar">Copiar colores</button></div>
+    </section>
+  </aside>
+</main>
 
 <div id="paleta"><div class="caja">
   <h2 id="ptitulo">Elegir color</h2>
   <div id="pgrid"></div>
-  <p id="pinfo" class="ayuda"></p>
+  <p id="pinfo" class="suave"></p>
   <button id="pcerrar">Cerrar</button>
 </div></div>
 
